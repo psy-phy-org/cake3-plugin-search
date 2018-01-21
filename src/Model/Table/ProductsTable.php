@@ -37,6 +37,16 @@ class ProductsTable extends Table
         $this->setPrimaryKey('id');
 
         $this->addBehavior('Timestamp');
+
+        // Add the behaviour to your table
+        $this->addBehavior('Search.Search');
+
+        // Setup search filter using search manager
+        $this->searchManager()
+            ->like('name', [
+                'before' => true,
+                'after' => true
+            ]);
     }
 
     /**

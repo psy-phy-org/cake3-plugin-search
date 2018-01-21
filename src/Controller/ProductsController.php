@@ -13,6 +13,14 @@ use App\Controller\AppController;
 class ProductsController extends AppController
 {
 
+    public function initialize()
+    {
+        parent::initialize();
+        $this->loadComponent('Search.Prg', [
+            'actions' => ['index']
+        ]);
+    }
+
     /**
      * Index method
      *
@@ -23,6 +31,10 @@ class ProductsController extends AppController
         $products = $this->paginate($this->Products);
 
         $this->set(compact('products'));
+
+        $query = $this->Products
+            ->find('search', ['search'=>$this->request->query]);
+        $this->set('products', $this->paginate($query));
     }
 
     /**

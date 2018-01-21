@@ -12,6 +12,15 @@
 </nav>
 <div class="products index large-9 medium-8 columns content">
     <h3><?= __('Products') ?></h3>
+
+<?php
+// Add search form
+echo $this->Form->create(null, ['valueSources' => 'query']);
+echo $this->Form->input('name');
+echo $this->Form->button('検索', ['type' => 'submit']);
+echo $this->Form->end();
+?>
+
     <table cellpadding="0" cellspacing="0">
         <thead>
             <tr>
