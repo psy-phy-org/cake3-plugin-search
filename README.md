@@ -1,51 +1,113 @@
-# CakePHP Application Skeleton
+# CakePHP Search
 
-[![Build Status](https://img.shields.io/travis/cakephp/app/master.svg?style=flat-square)](https://travis-ci.org/cakephp/app)
-[![License](https://img.shields.io/packagist/l/cakephp/app.svg?style=flat-square)](https://packagist.org/packages/cakephp/app)
+[![Build Status](https://img.shields.io/travis/FriendsOfCake/search/master.svg?style=flat-square)](https://travis-ci.org/FriendsOfCake/search)
+[![Coverage Status](https://img.shields.io/codecov/c/github/FriendsOfCake/search.svg?style=flat-square)](https://codecov.io/github/FriendsOfCake/search)
+[![Total Downloads](https://img.shields.io/packagist/dt/friendsofcake/search.svg?style=flat-square)](https://packagist.org/packages/friendsofcake/search)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](https://packagist.org/packages/friendsofcake/search)
 
-A skeleton for creating applications with [CakePHP](https://cakephp.org) 3.x.
+Search provides a simple interface to create paginate-able filters for your CakePHP 3.x application.
 
-The framework source code can be found here: [cakephp/cakephp](https://github.com/cakephp/cakephp).
+## Requirements
+
+* CakePHP 3.4.0 or greater. For older versions of CakePHP use 3.x releases of
+the plugin.
 
 ## Installation
 
-1. Download [Composer](https://getcomposer.org/doc/00-intro.md) or update `composer self-update`.
-2. Run `php composer.phar create-project --prefer-dist cakephp/app [app_name]`.
+* CakePHPプロジェクトのROOTディレクトリからコンポーザーでプラグインをインストールする
 
-If Composer is installed globally, run
-
-```bash
-composer create-project --prefer-dist cakephp/app
+```sh
+composer require friendsofcake/search
 ```
 
-In case you want to use a custom app dir name (e.g. `/myapp/`):
+* コマンドを実行してプラグインを読み込む
 
-```bash
-composer create-project --prefer-dist cakephp/app myapp
+```sh
+./bin/cake plugin load Search
 ```
 
-You can now either use your machine's webserver to view the default home page, or start
-up the built-in webserver with:
+`config/bootstrap.php` に以下が追加される
 
-```bash
-bin/cake server -p 8765
+```php
+Plugin::load('Search');
 ```
 
-Then visit `http://localhost:8765` to see the welcome page.
+## Usage
 
-## Update
+プラグインを利用するには3つの主要な部分がある
 
-Since this skeleton is a starting point for your application and various files
-would have been modified as per your needs, there isn't a way to provide
-automated upgrades, so you have to do any updates manually.
+### Table class
 
-## Configuration
+initialize に addBehavior() と、検索条件を追加
 
-Read and edit `config/app.php` and setup the `'Datasources'` and any other
-configuration relevant for your application.
+```php
+ *
+ * @mixin \Cake\ORM\Behavior\TimestampBehavior
+ */
+class ProductsTable extends Table
+{
 
-## Layout
+    /**
+     * Initialize method
+     *
+     * @param array $config The configuration for the Table.
+     * @return void
+     */
+    public function initialize(array $config)
+    {
+        parent::initialize($config);
 
-The app skeleton uses a subset of [Foundation](http://foundation.zurb.com/) (v5) CSS
-framework by default. You can, however, replace it with any other library or
-custom styles.
+        $this->setTable('products');
+        $this->setDisplayField('name');
+        $this->setPrimaryKey('id');
+
+        $this->addBehavior('Timestamp');
+
+        // Add the behaviour to your table
+        $this->addBehavior('Search.Search');
+
+        // Setup search filter using search manager
+        $this->searchManager()
+            ->like('name', [
+                'before' => true,
+                'after' => true
+            ]);
+    }
+```
+
+### Controller class
+initializeでコンポーネントの読み込みと使うアクション指定
+
+```php
+public function initialize()
+    {
+        parent::initialize();
+        $this->loadComponent('Search.Prg', [
+            'actions' => ['index']
+        ]);
+    }
+
+public function index()
+    {
+        $products = $this->paginate($this->Products);
+
+        $this->set(compact('products'));
+
+        $query = $this->Products
+            ->find('search', ['search'=>$this->request->query]);
+        $this->set('products', $this->paginate($query));
+    }
+```
+
+### Creating your form
+ビュー(検索フォーム)
+
+```php
+<?php
+// Add search form
+echo $this->Form->create(null, ['valueSources' => 'query']);
+echo $this->Form->input('name');
+echo $this->Form->button('検索', ['type' => 'submit']);
+echo $this->Form->end();
+?>
+```
